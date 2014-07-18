@@ -78,9 +78,8 @@ class PurePosTrainer(PurePosBase):
         Text is a list of sentences. A sentence is a list of (word, lemma, tag) tuples.
         """
         
-        txt = u"\n".join([ u" ".join(map(triplet2txt, sent)) for sent in sents])
-#         if isinstance(txt, unicode):
-#             txt = txt.encode(self._encoding)
+        txt = "\n".join([ " ".join(map(triplet2txt, sent)) for sent in sents])
+
         self._purepos.stdin.write(txt.encode(self._encoding))
         self._purepos.stdin.write("\n".encode(self._encoding))
         self._purepos.stdin.flush()
@@ -95,7 +94,6 @@ class PurePosTagger(PurePosBase):
         self._multitag=bool(multi_tag)
         if multi_tag:
             options =  ["-n", str(multi_tag), "-d"]
-#            options =  ["-n", str(multi_tag),]# "-b", "1000", "-d"]
         PurePosBase.__init__(self, model_path, "tag", options, encoding, verbose)
         
 
@@ -132,9 +130,9 @@ class PurePosTagger(PurePosBase):
             sys.stderr.write(repr(out) + "\n")
             raise
         if not self._multitag:
-            ret = map(txt2triplet, out.split(u" "))
+            ret = map(txt2triplet, out.split(" "))
         else:
-            sents = out.split(u"\t")
+            sents = out.split("\t")
             ret = map(parse_scoredsent, sents)
             
         return list(ret) 
