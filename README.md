@@ -1,4 +1,4 @@
 Purepos.py
 ==========
 
-A Python 3 wrapper for PurePos.
+A Python3 wrapper for [PurePos](https://github.com/ppke-nlpg/purepos).
