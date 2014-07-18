@@ -1,4 +1,4 @@
-purepos.py
+Purepos.py
 ==========
 
-Python wrapper for PurePos
+A Python 3 wrapper for PurePos.
