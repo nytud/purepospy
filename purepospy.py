@@ -39,6 +39,7 @@ class PurePOS:
         self._morphology = morphology
         self._model = None
         self._tagger = None
+        self._java_string_class = autoclass('java.lang.String')  # We have to use it later...
 
     def train(self, sentences, tag_order=2, emission_order=2, suff_length=10, rare_freq=10,
               lemma_transformation_type='suffix', lemma_threshold=2):
@@ -62,24 +63,26 @@ class PurePOS:
         # 4) Read sentences
         # 4a) Load the required classses
         print('Reading sentences...', end='', file=sys.stderr)
-        Document = autoclass('hu.ppke.itk.nlpg.docmodel.internal.Document')
-        Paragraph = autoclass('hu.ppke.itk.nlpg.docmodel.internal.Paragraph')
-        Sentence = autoclass('hu.ppke.itk.nlpg.docmodel.internal.Sentence')
-        Token = autoclass('hu.ppke.itk.nlpg.docmodel.internal.Token')
-        JList = autoclass('java.util.ArrayList')
+        document_java_class = autoclass('hu.ppke.itk.nlpg.docmodel.internal.Document')
+        paragraph_java_class = autoclass('hu.ppke.itk.nlpg.docmodel.internal.Paragraph')
+        sentence_java_class = autoclass('hu.ppke.itk.nlpg.docmodel.internal.Sentence')
+        token_java_class = autoclass('hu.ppke.itk.nlpg.docmodel.internal.Token')
+        java_list_class = autoclass('java.util.ArrayList')
 
         # 4b) Convert Python iterable to JAVA List and build a Document class
-        sents = JList()
+        sents = java_list_class()
         for sent in sentences:
-            curr_sent = JList()
+            curr_sent = java_list_class()
             for tok, stem, tag in sent:
-                curr_tok = Token(tok, stem, tag)
+                curr_tok = token_java_class(self._java_string_class(tok.encode('UTF-8')),
+                                            self._java_string_class(stem.encode('UTF-8')),
+                                            self._java_string_class(tag.encode('UTF-8')))
                 curr_sent.add(curr_tok)
-            sents.add(Sentence(curr_sent))
+            sents.add(sentence_java_class(curr_sent))
 
-        paras = JList()
-        paras.add(Paragraph(sents))
-        doc = Document(paras)
+        paras = java_list_class()
+        paras.add(paragraph_java_class(sents))
+        doc = document_java_class(paras)
 
         print('Done', file=sys.stderr)
         # 5) Feed Document to the model to train
@@ -146,7 +149,7 @@ class PurePOS:
             new_sent.append(word if not word.endswith('{{}}') else word[:-4])
 
         new_sent = ' '.join(new_sent)
-        ret = self._tagger.tagSentence(new_sent)
+        ret = self._tagger.tagSentence(self._java_string_class(new_sent.encode('UTF-8')))
         return ret.toString()[:-1]
 
     @staticmethod
