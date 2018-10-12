@@ -31,15 +31,24 @@ os.environ['CLASSPATH'] = ':'.join([os.path.join(purepos_dir, 'lib/guava-r09.jar
 from jnius import autoclass
 
 
+class UserMorphology:
+    def __init__(self, anals):
+        self.anals = anals
+
+    def stem(self, token):
+        return self.anals[token]
+
+
 class PurePOS:
     def __init__(self, model_name, morphology=None):
         self._params = {}
         self._model_name = model_name
         self._model_jfile = autoclass('java.io.File')(self._model_name)
-        self._morphology = morphology
+        self.morphology = morphology
         self._model = None
         self._tagger = None
         self._java_string_class = autoclass('java.lang.String')  # We have to use it later...
+        self.target_fields = ['lemma', 'hfstana']  # For eMagyar TSV format...
 
     def train(self, sentences, tag_order=2, emission_order=2, suff_length=10, rare_freq=10,
               lemma_transformation_type='suffix', lemma_threshold=2):
@@ -137,8 +146,8 @@ class PurePOS:
         This input goes into the tagger
         And the string output's last character is stripped as there is an extra whitespace.
         """
-        if self._morphology is not None:
-            stem = self._morphology.stem
+        if self.morphology is not None:
+            stem = self.morphology.stem
         else:
             stem = self._dummy_morphology
 
@@ -151,6 +160,44 @@ class PurePOS:
         new_sent = ' '.join(new_sent)
         ret = self._tagger.tagSentence(self._java_string_class(new_sent.encode('UTF-8')))
         return ret.toString()[:-1]
+
+    @staticmethod
+    def prepare_fields(field_names):
+        return [field_names['string'], field_names['anas']]
+
+    @staticmethod
+    def _add_ana_if_any(anas):
+        out_anas = []
+        if len(anas) > 3:
+            """
+            ana=alom[/N]=alm+a[Poss.3Sg]=a+[Nom], feats=[/N][Poss.3Sg][Nom], lemma=alom, readable_ana=alom[/N]=alm 
+            + a[Poss.3Sg] + [Nom]};
+            ana=alma[/N]=alma+[Nom], feats=[/N][Nom], lemma=alma, readable_ana=alma[/N] + [Nom]}
+            """
+            for ana in anas.split('};{'):
+                ana_dict = {}
+                for it in ana[1:-1].split(', '):
+                    k, v = it.split('=', maxsplit=1)
+                    ana_dict[k] = v
+
+                tag = ana_dict['feats']
+                lemma = ana_dict['lemma']
+                out_anas.append((lemma, tag))
+        return out_anas
+
+    def process_sentence(self, sen, field_indices):
+        sent = []
+        m = UserMorphology({})
+        for tok in sen:
+            token = tok[field_indices[0]]
+            sent.append(token)
+            m.anals[token] = self._add_ana_if_any(tok[field_indices[1]])
+
+        self.morphology = m
+        for tok, tagged in zip(sen, self.tag_sentence(' '.join(sent)).split()):
+            _, lemma, hfstana = tagged.split('#')
+            tok.extend([lemma, hfstana])
+        return sen
 
     @staticmethod
     def _dummy_morphology(_):
@@ -329,4 +376,19 @@ def test():
 
 
 if __name__ == '__main__':
+    """
+    sents = []
+    with open('train.txt', encoding='UTF-8') as fh:
+        for line in fh:
+            line = line.strip()
+            sent = []
+            for tok in line.split(' '):
+                sent.append(tok.split('#'))
+            sents.append(sent)
+    p = PurePOS('szeg.model')
+    # p.train(sents)
+    out = p.tag_sentence('Múlt év szeptemberében az osztállyal elmentünk kirándulni Balatonra .')
+    print(out)
+    exit(1)
+    """
     test()
