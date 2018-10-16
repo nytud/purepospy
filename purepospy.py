@@ -43,11 +43,11 @@ class PurePOS:
     def __init__(self, model_name, morphology=None):
         self._params = {}
         self._model_name = model_name
-        self._model_jfile = autoclass('java.io.File')(self._model_name)
+        self._java_string_class = autoclass('java.lang.String')  # We have to use it later...
+        self._model_jfile = autoclass('java.io.File')(self._java_string_class(self._model_name.encode('UTF-8'))
         self.morphology = morphology
         self._model = None
         self._tagger = None
-        self._java_string_class = autoclass('java.lang.String')  # We have to use it later...
         self.target_fields = ['lemma', 'hfstana']  # For eMagyar TSV format...
 
     def train(self, sentences, tag_order=2, emission_order=2, suff_length=10, rare_freq=10,
