@@ -44,7 +44,7 @@ class PurePOS:
         self._params = {}
         self._model_name = model_name
         self._java_string_class = autoclass('java.lang.String')  # We have to use it later...
-        self._model_jfile = autoclass('java.io.File')(self._java_string_class(self._model_name.encode('UTF-8'))
+        self._model_jfile = autoclass('java.io.File')(self._java_string_class(self._model_name.encode('UTF-8')))
         self.morphology = morphology
         self._model = None
         self._tagger = None
