@@ -5,6 +5,7 @@ import os
 import sys
 import math
 from itertools import chain
+from json import loads as json_loads
 
 # For PurePOS TCP server
 import socketserver
@@ -165,33 +166,15 @@ class PurePOS:
     def prepare_fields(field_names):
         return [field_names['string'], field_names['anas']]
 
-    @staticmethod
-    def _add_ana_if_any(anas):
-        out_anas = []
-        if len(anas) > 3:
-            """
-            ana=alom[/N]=alm+a[Poss.3Sg]=a+[Nom], feats=[/N][Poss.3Sg][Nom], lemma=alom, readable_ana=alom[/N]=alm 
-            + a[Poss.3Sg] + [Nom]};
-            ana=alma[/N]=alma+[Nom], feats=[/N][Nom], lemma=alma, readable_ana=alma[/N] + [Nom]}
-            """
-            for ana in anas.split('};{'):
-                ana_dict = {}
-                for it in ana[1:-1].split(', '):
-                    k, v = it.split('=', maxsplit=1)
-                    ana_dict[k] = v
-
-                tag = ana_dict['feats']
-                lemma = ana_dict['lemma']
-                out_anas.append((lemma, tag))
-        return out_anas
-
     def process_sentence(self, sen, field_indices):
         sent = []
         m = UserMorphology({})
         for tok in sen:
             token = tok[field_indices[0]]
             sent.append(token)
-            m.anals[token] = self._add_ana_if_any(tok[field_indices[1]])
+            # TODO: This is not based on the token ID, but rather on token.
+            # TODO: Depends: PurePOS AnalysisQueue fix to ignore input format
+            m.anals[token] = [(ana['lemma'], ana['feats']) for ana in json_loads(tok[field_indices[1]])]  # lemma, tag
 
         self.morphology = m
         for tok, tagged in zip(sen, self.tag_sentence(' '.join(sent)).split()):
