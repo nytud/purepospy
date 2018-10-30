@@ -11,25 +11,40 @@ from json import loads as json_loads
 import socketserver
 from datetime import datetime
 
-# Tested on Ubuntu 16.04 64bit with openjdk-8 JDK and JRE installed:
-# sudo apt install openjdk-8-jdk-headless openjdk-8-jre-headless
 
-# Set JAVA_HOME for this session
-try:
-    os.environ['JAVA_HOME']
-except KeyError:
-    os.environ['JAVA_HOME'] = '/usr/lib/jvm/java-8-openjdk-amd64/'
+def import_pyjnius(class_path):
+    """
+    PyJNIus can only be imported once per Python interpreter and one must set the classpath before importing...
+    """
+    # Check if autoclass is already imported...
+    if 'autoclass' not in locals() and 'autoclass' not in globals():
 
-# Set path for PurePOS for this session
-purepos_dir = os.path.join(os.path.dirname(__file__), 'purepos/purepos-2.1-dev.one-jar/')
+        # Tested on Ubuntu 16.04 64bit with openjdk-8 JDK and JRE installed:
+        # sudo apt install openjdk-8-jdk-headless openjdk-8-jre-headless
 
-os.environ['CLASSPATH'] = ':'.join([os.path.join(purepos_dir, 'lib/guava-r09.jar'),
-                                    os.path.join(purepos_dir, 'lib/commons-lang3-3.0.1.jar'),
-                                    os.path.join(purepos_dir, 'main/purepos-2.1-dev.jar')])
+        # Set JAVA_HOME for this session
+        try:
+            os.environ['JAVA_HOME']
+        except KeyError:
+            os.environ['JAVA_HOME'] = '/usr/lib/jvm/java-8-openjdk-amd64/'
 
+        os.environ['CLASSPATH'] = ':'.join((class_path, os.environ.get('CLASSPATH', ''))).rstrip(':')
 
-# Set path and import jnius for this session
-from jnius import autoclass
+        # Set path and import jnius for this session
+        from jnius import autoclass
+    else:
+        import sys
+        from jnius import cast, autoclass  # Dummy autoclass import to silence the IDE
+        class_loader = autoclass('java.lang.ClassLoader')
+        cl = class_loader.getSystemClassLoader()
+        ucl = cast('java.net.URLClassLoader', cl)
+        urls = ucl.getURLs()
+        cp = ':'.join(url.getFile() for url in urls)
+
+        print('Warning: PyJNIus is already imported with the following classpath: {0}'.format(cp), file=sys.stderr)
+
+    # Return autoclass for later use...
+    return autoclass
 
 
 class UserMorphology:
@@ -41,11 +56,18 @@ class UserMorphology:
 
 
 class PurePOS:
+    class_path = ':'.join((os.path.join(os.path.dirname(__file__),
+                                        'purepos/purepos-2.1-dev.one-jar/', jar)
+                           for jar in ('lib/guava-r09.jar',
+                                       'lib/commons-lang3-3.0.1.jar',
+                                       'main/purepos-2.1-dev.jar')))
+
     def __init__(self, model_name, morphology=None):
+        self._autoclass = import_pyjnius(PurePOS.class_path)
         self._params = {}
         self._model_name = model_name
-        self._java_string_class = autoclass('java.lang.String')  # We have to use it later...
-        self._model_jfile = autoclass('java.io.File')(self._java_string_class(self._model_name.encode('UTF-8')))
+        self._java_string_class = self._autoclass('java.lang.String')  # We have to use it later...
+        self._model_jfile = self._autoclass('java.io.File')(self._java_string_class(self._model_name.encode('UTF-8')))
         self.morphology = morphology
         self._model = None
         self._tagger = None
@@ -57,7 +79,7 @@ class PurePOS:
                              'lemma_transformation_type': 'suffix', 'lemma_threshold': 2})
 
         # 1) Load Serializer
-        serializer = autoclass('hu.ppke.itk.nlpg.purepos.common.serializer.SSerializer')()
+        serializer = self._autoclass('hu.ppke.itk.nlpg.purepos.common.serializer.SSerializer')()
 
         # 2) Check if the modell file exists yes-> append new training data to model, no-> create new model
         if os.path.exists(self._model_name):
@@ -65,7 +87,7 @@ class PurePOS:
             self._model = serializer.readModel(self._model_jfile)
             print('Done', file=sys.stderr)
         else:
-            self._model = autoclass('hu.ppke.itk.nlpg.purepos.model.internal.RawModel')(tag_order, emission_order,
+            self._model = self._autoclass('hu.ppke.itk.nlpg.purepos.model.internal.RawModel')(tag_order, emission_order,
                                                                                         suff_length, rare_freq)
         # 3) Set lemmatisation parameters to model
         self._model.setLemmaVariables(lemma_transformation_type, lemma_threshold)
@@ -73,11 +95,11 @@ class PurePOS:
         # 4) Read sentences
         # 4a) Load the required classses
         print('Reading sentences...', end='', file=sys.stderr)
-        document_java_class = autoclass('hu.ppke.itk.nlpg.docmodel.internal.Document')
-        paragraph_java_class = autoclass('hu.ppke.itk.nlpg.docmodel.internal.Paragraph')
-        sentence_java_class = autoclass('hu.ppke.itk.nlpg.docmodel.internal.Sentence')
-        token_java_class = autoclass('hu.ppke.itk.nlpg.docmodel.internal.Token')
-        java_list_class = autoclass('java.util.ArrayList')
+        document_java_class = self._autoclass('hu.ppke.itk.nlpg.docmodel.internal.Document')
+        paragraph_java_class = self._autoclass('hu.ppke.itk.nlpg.docmodel.internal.Paragraph')
+        sentence_java_class = self._autoclass('hu.ppke.itk.nlpg.docmodel.internal.Sentence')
+        token_java_class = self._autoclass('hu.ppke.itk.nlpg.docmodel.internal.Token')
+        java_list_class = self._autoclass('java.util.ArrayList')
 
         # 4b) Convert Python iterable to JAVA List and build a Document class
         sents = java_list_class()
@@ -110,9 +132,9 @@ class PurePOS:
             print('Compiling model...', end='', file=sys.stderr)
             # DUMMY STUFF NEEDED LATTER:
             # 1) Create nullanalyzer as we will use a Morphological Alalyzer form outside
-            analyzer = autoclass('hu.ppke.itk.nlpg.purepos.morphology.NullAnalyzer')()
+            analyzer = self._autoclass('hu.ppke.itk.nlpg.purepos.morphology.NullAnalyzer')()
             # 2) Create dummy configuration
-            conf = autoclass('hu.ppke.itk.nlpg.purepos.cli.configuration.Configuration')()
+            conf = self._autoclass('hu.ppke.itk.nlpg.purepos.cli.configuration.Configuration')()
             # 3) Create Log Theta for Beam
             self._params['beam_log_theta'] = beam_log_theta
             # 4) Create Log Theta for Suffix
@@ -126,14 +148,14 @@ class PurePOS:
             # 1) Read model to JAVA File
             # Done in __init__()
             # 2) Create Serializer for deserializing
-            serializer = autoclass('hu.ppke.itk.nlpg.purepos.common.serializer.SSerializer')
+            serializer = self._autoclass('hu.ppke.itk.nlpg.purepos.common.serializer.SSerializer')
             # 3) Deserialize. Here we need the dependencies to be in the CLASS_PATH: Guava and lang3
             read_mod = serializer().readModel(self._model_jfile)
             # 4) Compile the model
             compiled_model = read_mod.compile(conf, lemma_transformation_type, lemma_threshold)
 
             # FIRE UP THE TAGGER WITH THE GIVEN ARGUMENTS:
-            self._tagger = autoclass('hu.ppke.itk.nlpg.purepos.MorphTagger')(
+            self._tagger = self._autoclass('hu.ppke.itk.nlpg.purepos.MorphTagger')(
                 compiled_model, analyzer, beam_log_theta, suffix_log_theta, max_guessed, use_beam_search)
             print('Done', file=sys.stderr)
 
