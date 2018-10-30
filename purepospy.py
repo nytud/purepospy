@@ -62,7 +62,7 @@ class PurePOS:
                                        'lib/commons-lang3-3.0.1.jar',
                                        'main/purepos-2.1-dev.jar')))
 
-    def __init__(self, model_name, morphology=None):
+    def __init__(self, model_name, morphology=None, source_fields=None, target_fields=None):
         self._autoclass = import_pyjnius(PurePOS.class_path)
         self._params = {}
         self._model_name = model_name
@@ -71,7 +71,16 @@ class PurePOS:
         self.morphology = morphology
         self._model = None
         self._tagger = None
-        self.target_fields = ['lemma', 'hfstana']  # For eMagyar TSV format...
+
+        # Field names for e-magyar TSV
+        if source_fields is None:
+            source_fields = {}
+
+        if target_fields is None:
+            target_fields = []
+
+        self.source_fields = source_fields
+        self.target_fields = target_fields
 
     def train(self, sentences, tag_order=2, emission_order=2, suff_length=10, rare_freq=10,
               lemma_transformation_type='suffix', lemma_threshold=2):
@@ -88,7 +97,7 @@ class PurePOS:
             print('Done', file=sys.stderr)
         else:
             self._model = self._autoclass('hu.ppke.itk.nlpg.purepos.model.internal.RawModel')(tag_order, emission_order,
-                                                                                        suff_length, rare_freq)
+                                                                                              suff_length, rare_freq)
         # 3) Set lemmatisation parameters to model
         self._model.setLemmaVariables(lemma_transformation_type, lemma_threshold)
 
