@@ -51,8 +51,8 @@ class UserMorphology:
     def __init__(self, anals):
         self.anals = anals
 
-    def stem(self, token):
-        return self.anals[token]
+    def stem(self, pos, _):
+        return self.anals[pos]
 
 
 class PurePOS:
@@ -66,8 +66,14 @@ class PurePOS:
         self._autoclass = import_pyjnius(PurePOS.class_path)
         self._params = {}
         self._model_name = model_name
-        self._java_string_class = self._autoclass('java.lang.String')  # We have to use it later...
-        self._model_jfile = self._autoclass('java.io.File')(self._java_string_class(self._model_name.encode('UTF-8')))
+
+        # We have to use it later...
+        self._java_string_class = self._autoclass('java.lang.String')
+        self._java_list_class = self._autoclass('java.util.ArrayList')
+        self._java_pair_class = self._autoclass('org.apache.commons.lang3.tuple.Pair')
+        self._java_anal_item_class = self._autoclass('hu.ppke.itk.nlpg.purepos.common.TAnalysisItem')
+
+        self._model_jfile = self._java_string_class(self._model_name.encode('UTF-8'))
         self.morphology = morphology
         self._model = None
         self._tagger = None
@@ -93,7 +99,7 @@ class PurePOS:
         # 2) Check if the modell file exists yes-> append new training data to model, no-> create new model
         if os.path.exists(self._model_name):
             print('Reading previous model...', end='', file=sys.stderr)
-            self._model = serializer.readModel(self._model_jfile)
+            self._model = serializer.readModelEx(self._model_jfile)
             print('Done', file=sys.stderr)
         else:
             self._model = self._autoclass('hu.ppke.itk.nlpg.purepos.model.internal.RawModel')(tag_order, emission_order,
@@ -108,7 +114,7 @@ class PurePOS:
         paragraph_java_class = self._autoclass('hu.ppke.itk.nlpg.docmodel.internal.Paragraph')
         sentence_java_class = self._autoclass('hu.ppke.itk.nlpg.docmodel.internal.Sentence')
         token_java_class = self._autoclass('hu.ppke.itk.nlpg.docmodel.internal.Token')
-        java_list_class = self._autoclass('java.util.ArrayList')
+        java_list_class = self._java_list_class
 
         # 4b) Convert Python iterable to JAVA List and build a Document class
         sents = java_list_class()
@@ -132,7 +138,7 @@ class PurePOS:
         print('Done', file=sys.stderr)
         # 6) Serializie model to file
         print('Writing model...', end='', file=sys.stderr)
-        serializer.writeModel(self._model, self._model_jfile)
+        serializer.writeModelEx(self._model, self._model_jfile)
         print('Done', file=sys.stderr)
 
     def tag_sentence(self, sent, beam_log_theta=math.log(1000), suffix_log_theta=math.log(10), max_guessed=10,
@@ -159,7 +165,7 @@ class PurePOS:
             # 2) Create Serializer for deserializing
             serializer = self._autoclass('hu.ppke.itk.nlpg.purepos.common.serializer.SSerializer')
             # 3) Deserialize. Here we need the dependencies to be in the CLASS_PATH: Guava and lang3
-            read_mod = serializer().readModel(self._model_jfile)
+            read_mod = serializer().readModelEx(self._model_jfile)
             # 4) Compile the model
             compiled_model = read_mod.compile(conf, lemma_transformation_type, lemma_threshold)
 
@@ -168,30 +174,36 @@ class PurePOS:
                 compiled_model, analyzer, beam_log_theta, suffix_log_theta, max_guessed, use_beam_search)
             print('Done', file=sys.stderr)
 
-        # Here we add the Morphological Analyzer's analyses if there aren't any...
+        # Here we add the Morphological Analyzer's analyses when there are...
         """
-        MA.stem(word) -> list(list(lemma, TAG)*)
-        Is converted to lemmaTAG per anal.
-        Which is  joined to anal1||anal2...
-        Which is formated to word{{anal1||anal2}}
-        Which is joined as input tokens if there is anal and token not ends with {{}}
+        MA(pos, tok) -> list(*(lemma, TAG))
+        EmMorphPy ignores pos, the preanalysed input ignores tok argument...
         This input goes into the tagger
-        And the string output's last character is stripped as there is an extra whitespace.
         """
         if self.morphology is not None:
-            stem = self.morphology.stem
+            morph = self.morphology
         else:
-            stem = self._dummy_morphology
+            morph = self._dummy_morphology
 
-        new_sent = []
-        for word in sent.split():
-            if word.find('{{') == -1 and not word.endswith('}}'):
-                word = '{0}{{{{{1}}}}}'.format(word, ('||'.join(''.join(anal) for anal in stem(word))))
-            new_sent.append(word if not word.endswith('{{}}') else word[:-4])
+        java_pair = self._java_pair_class
+        jt_analysis_item = self._java_anal_item_class
+        java_list_class = self._java_list_class
 
-        new_sent = ' '.join(new_sent)
-        ret = self._tagger.tagSentence(self._java_string_class(new_sent.encode('UTF-8')))
-        return ret.toString()[:-1]
+        new_sent = java_list_class()
+        for pos, tok in enumerate(sent):
+            # Create anals in native JAVA type format
+            anals = java_list_class()
+            for lemma, tag in morph(pos, tok):
+                anals.add(jt_analysis_item.create(self._java_string_class(lemma.encode('UTF-8')),
+                                                  self._java_string_class(tag.encode('UTF-8'))))
+
+            # Create sentence in native JAVA type format
+            new_sent.add(java_pair.of(self._java_string_class(tok.encode('UTF-8')), anals))
+
+        ret = self._tagger.tagSentenceEx(new_sent)
+        for i in range(ret.size()):
+            t = ret.get(i)
+            yield (t.token, t.stem, t.tag)
 
     @staticmethod
     def prepare_fields(field_names):
@@ -199,22 +211,19 @@ class PurePOS:
 
     def process_sentence(self, sen, field_indices):
         sent = []
-        m = UserMorphology({})
-        for tok in sen:
+        m = {}
+        for pos, tok in enumerate(sen):
             token = tok[field_indices[0]]
             sent.append(token)
-            # TODO: This is not based on the token ID, but rather on token.
-            # TODO: Depends: PurePOS AnalysisQueue fix to ignore input format
-            m.anals[token] = [(ana['lemma'], ana['feats']) for ana in json_loads(tok[field_indices[1]])]  # lemma, tag
+            m[pos] = [(ana['lemma'], ana['feats']) for ana in json_loads(tok[field_indices[1]])]  # lemma, tag
 
-        self.morphology = m
-        for tok, tagged in zip(sen, self.tag_sentence(' '.join(sent)).split()):
-            _, lemma, hfstana = tagged.split('#')
+        self.morphology = lambda position, _: UserMorphology(m).anals[position]
+        for tok, (_, lemma, hfstana) in zip(sen, self.tag_sentence(sent)):
             tok.extend([lemma, hfstana])
         return sen
 
     @staticmethod
-    def _dummy_morphology(_):
+    def _dummy_morphology(*_):
         return ()
 
 
@@ -320,7 +329,7 @@ class RawToPurePOS:
         # FIRE UP emMorphPy
         from emmorphpy.emmorphpy import EmMorphPy
         print('Firing up emMorphPy...')
-        self._morphology = EmMorphPy()
+        self._morphology = lambda pos, tok: EmMorphPy().stem(tok)
         # FIRE UP PurePOS for tagging
         print('Firing up PurePOSTagger...')
         self.purepos = PurePOS(model_name=os.path.join(os.path.dirname(__file__), 'szeged.model'),
@@ -335,13 +344,26 @@ class RawToPurePOS:
 
     def process_to_sentence(self, input_text):
         for sent in self.tokenizer.sent_tokenize(input_text):
-            tokens = ' '.join(self.tokenizer.word_tokenize(sent))
-            ret = self.purepos.tag_sentence(tokens)
-            yield ret.split()
+            tokens = self.tokenizer.word_tokenize(sent)
+            ret = ['#'.join(tok) for tok in self.purepos.tag_sentence(tokens)]
+            yield ret
 
     # No tokenisation. It waits for exactly one sentence in the OLD purepos format!
     def process_preanalyzed_text(self, input_text):
-        return [self.purepos.tag_sentence(input_text)]  # REST API waits for the first of the setences
+        anals = {}
+        plain_sent = []
+        for pos, tok in enumerate(input_text.split('\n', maxsplit=1)[0].split()):
+            if tok.endswith('}}') and '{{' in tok:
+                tok, rest = tok[:-2].split('{{', maxsplit=1)
+                if len(rest) > 0:
+                    for anal in rest.split('||'):
+                        lemma, tag = anal.split('[', maxsplit=1)
+                        tag = '[' + tag
+                        anals[pos] = (lemma, tag)
+            plain_sent.append(tok)
+        self.purepos.morphology = UserMorphology(anals)
+        # REST API waits for the first of the setences
+        return [' '.join('#'.join(tok) for tok in self.purepos.tag_sentence(input_text))]
 
     def close(self):
         pass
