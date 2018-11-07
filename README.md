@@ -4,7 +4,8 @@ A Python3 wrapper for [PurePos](https://github.com/ppke-nlpg/purepos).
 
 ## Requirements
 
-See requirements.txt.
+- See requirements.txt.
+- Model (already included) e.g. [Szeged corpus](http://rgai.inf.u-szeged.hu/index.php?lang=en&page=SzegedTreebank) with [emMorph tags](http://e-magyar.hu/en/textmodules/emmorph_codelist).
 
 ## Usage
 

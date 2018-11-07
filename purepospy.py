@@ -62,7 +62,7 @@ class PurePOS:
                                        'lib/commons-lang3-3.0.1.jar',
                                        'main/purepos-2.1-dev.jar')))
 
-    def __init__(self, model_name, morphology=None, source_fields=None, target_fields=None):
+    def __init__(self, model_name=os.path.join(os.path.dirname(__file__), 'purepos/szeged.model'), morphology=None, source_fields=None, target_fields=None):
         self._autoclass = import_pyjnius(PurePOS.class_path)
         self._params = {}
         self._model_name = model_name
