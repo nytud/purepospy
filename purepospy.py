@@ -207,6 +207,7 @@ class PurePOS:
 
     @staticmethod
     def prepare_fields(field_names):
+        # TODO: Maybe its not a good idea to hand-wire here the name and order of the features
         return [field_names['string'], field_names['anas']]
 
     def process_sentence(self, sen, field_indices):
@@ -215,7 +216,8 @@ class PurePOS:
         for pos, tok in enumerate(sen):
             token = tok[field_indices[0]]
             sent.append(token)
-            m[pos] = [(ana['lemma'], ana['feats']) for ana in json_loads(tok[field_indices[1]])]  # lemma, tag
+            # TODO: Maybe its not a good idea to hand-wire here the name and order of the features
+            m[pos] = [(ana['lemma'], ana['tag']) for ana in json_loads(tok[field_indices[1]])]  # lemma, tag
 
         self.morphology = lambda position, _: UserMorphology(m).anals[position]
         for tok, (_, lemma, hfstana) in zip(sen, self.tag_sentence(sent)):
