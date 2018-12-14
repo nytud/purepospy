@@ -11,13 +11,15 @@ from json import loads as json_loads
 import socketserver
 from datetime import datetime
 
+import jnius_config
 
-def import_pyjnius(class_path):
+
+def import_pyjnius():
     """
     PyJNIus can only be imported once per Python interpreter and one must set the classpath before importing...
     """
     # Check if autoclass is already imported...
-    if 'autoclass' not in locals() and 'autoclass' not in globals():
+    if not jnius_config.vm_running:
 
         # Tested on Ubuntu 16.04 64bit with openjdk-8 JDK and JRE installed:
         # sudo apt install openjdk-8-jdk-headless openjdk-8-jre-headless
@@ -27,8 +29,6 @@ def import_pyjnius(class_path):
             os.environ['JAVA_HOME']
         except KeyError:
             os.environ['JAVA_HOME'] = '/usr/lib/jvm/java-8-openjdk-amd64/'
-
-        os.environ['CLASSPATH'] = ':'.join((class_path, os.environ.get('CLASSPATH', ''))).rstrip(':')
 
         # Set path and import jnius for this session
         from jnius import autoclass
@@ -41,7 +41,8 @@ def import_pyjnius(class_path):
         urls = ucl.getURLs()
         cp = ':'.join(url.getFile() for url in urls)
 
-        print('Warning: PyJNIus is already imported with the following classpath: {0}'.format(cp), file=sys.stderr)
+        print('Warning: PyJNIus is already imported with the following classpath: {0} Please check if it is ok!'.
+              format(cp), file=sys.stderr)
 
     # Return autoclass for later use...
     return autoclass
@@ -62,8 +63,11 @@ class PurePOS:
                                        'lib/commons-lang3-3.0.1.jar',
                                        'main/purepos-2.1-dev.jar')))
 
-    def __init__(self, model_name=os.path.join(os.path.dirname(__file__), 'purepos/szeged.model'), morphology=None, source_fields=None, target_fields=None):
-        self._autoclass = import_pyjnius(PurePOS.class_path)
+    def __init__(self, model_name=os.path.join(os.path.dirname(__file__), 'purepos/szeged.model'), morphology=None,
+                 source_fields=None, target_fields=None):
+        if not jnius_config.vm_running:
+            jnius_config.add_classpath(PurePOS.class_path)
+            self._autoclass = import_pyjnius()
         self._params = {}
         self._model_name = model_name
 
