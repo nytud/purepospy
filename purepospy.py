@@ -34,7 +34,7 @@ def import_pyjnius():
         from jnius import autoclass
     else:
         import sys
-        from jnius import cast, autoclass  # Dummy autoclass import to silence the IDE
+        from jnius import cast, autoclass
         class_loader = autoclass('java.lang.ClassLoader')
         cl = class_loader.getSystemClassLoader()
         ucl = cast('java.net.URLClassLoader', cl)
@@ -67,7 +67,7 @@ class PurePOS:
                  source_fields=None, target_fields=None):
         if not jnius_config.vm_running:
             jnius_config.add_classpath(PurePOS.class_path)
-            self._autoclass = import_pyjnius()
+        self._autoclass = import_pyjnius()
         self._params = {}
         self._model_name = model_name
 
