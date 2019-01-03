@@ -215,7 +215,7 @@ class PurePOS:
     @staticmethod
     def prepare_fields(field_names):
         # TODO: Maybe its not a good idea to hand-wire here the name and order of the features
-        return [field_names['string'], field_names['anas']]
+        return [field_names['form'], field_names['anas']]
 
     def process_sentence(self, sen, field_indices):
         sent = []
@@ -234,6 +234,9 @@ class PurePOS:
     @staticmethod
     def _dummy_morphology(*_):
         return ()
+
+# From here comes some old code used by AnaGramma, not tested. Deprecated, will be removed.
+# Recomended usage: through xTSV and emTSV.
 
 
 def put_data_together(sents, annots):
