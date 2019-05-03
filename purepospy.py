@@ -65,6 +65,7 @@ class PurePOS:
                            for jar in ('lib/guava-r09.jar',
                                        'lib/commons-lang3-3.0.1.jar',
                                        'main/purepos-2.1-dev.jar')))
+    pass_header = True
 
     def __init__(self, model_name=os.path.join(os.path.dirname(__file__), 'purepos/szeged.model'), morphology=None,
                  source_fields=None, target_fields=None):
