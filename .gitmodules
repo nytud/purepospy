@@ -1,3 +1,3 @@
-[submodule "emmorphpy"]
-	path = emmorphpy
-	url = https://github.com/ppke-nlpg/emmorphpy.git
+[submodule "xtsv"]
+	path = xtsv
+	url = https://github.com/dlt-rilmta/xtsv.git

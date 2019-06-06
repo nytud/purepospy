@@ -9,14 +9,9 @@ A Python3 wrapper for [PurePos](https://github.com/ppke-nlpg/purepos).
 
 ## Usage
 
-This repository contains the following classes and utilities:
+The authors recommend using PurePOSPy in [emtsv](https://github.com/dlt-rilmta/emtsv) the new version of [e-magyar](http://www.e-magyar.hu) language processing system. This module is called *emTag*.
 
-- PurePOS: a Python 3 wrapper class around PurePos, which can be used for training and tagging
-- Tokenizer: a simple rule-based sentence splitter and tokenizer class for Hungarian
-- RawToPurePOS: a class allows to feed raw text to PurePos after tokenization
-- PurePOSTCPHandler: a simple TCP server variant of RawToPurePOS
-- read_data_w_annotation: a utility function to read data from string to sentences and annotations separated
-- put_data_together: a utility function to zip sentences and annotations (ex. for feeding to PurePOS as training data)
+The PurePOS class is a Python 3 wrapper class around PurePos, which can be used for training and tagging
 
 	```python
 	>>> from purepospy import PurePOS
