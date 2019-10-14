@@ -6,7 +6,7 @@ import sys
 import math
 from json import loads as json_loads
 
-from xtsv import jnius_config,import_pyjnius
+from xtsv import jnius_config, import_pyjnius
 
 
 class UserMorphology:
@@ -27,8 +27,6 @@ class PurePOS:
 
     def __init__(self, model_name=os.path.join(os.path.dirname(__file__), 'purepos/szeged.model'), morphology=None,
                  source_fields=None, target_fields=None):
-        if not jnius_config.vm_running:
-            jnius_config.add_classpath(PurePOS.class_path)
         self._autoclass = import_pyjnius()
         self._params = {}
         self._model_name = model_name
@@ -193,3 +191,7 @@ class PurePOS:
     @staticmethod
     def _dummy_morphology(*_):
         return ()
+
+
+if not jnius_config.vm_running:
+    jnius_config.add_classpath(PurePOS.class_path)
