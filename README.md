@@ -1,3 +1,7 @@
+# __Warning: This repository might not contain the newest version of the source code. The development is continued at https://github.com/dlt-rilmta/purepospy__ 
+
+---
+
 # PurePosPy
 
 A Python3 wrapper for [PurePos](https://github.com/ppke-nlpg/purepos).
