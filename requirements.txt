@@ -1,3 +1,3 @@
 Cython
 # Cython MUST BE INSTALLED SEPARATELY, ELSE INSTALL WILL FAIL!
-pyjnius
+pyjnius==1.2
