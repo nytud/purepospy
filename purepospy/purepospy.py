@@ -18,8 +18,7 @@ class UserMorphology:
 
 
 class PurePOS:
-    class_path = ':'.join((os.path.join(os.path.dirname(__file__),
-                                        'purepos-2.1-dev.one-jar/', jar)
+    class_path = ':'.join((os.path.join(os.path.dirname(__file__), 'purepos-2.1-dev.one-jar/', jar)
                            for jar in ('lib/guava-r09.jar',
                                        'lib/commons-lang3-3.0.1.jar',
                                        'main/purepos-2.1-dev.jar')))
@@ -167,7 +166,7 @@ class PurePOS:
         ret = self._tagger.tagSentenceEx(new_sent)
         for i in range(ret.size()):
             t = ret.get(i)
-            yield t.token, t.stem, t.tag
+            yield t.getToken(), t.getStem(), t.getTag()
 
     @staticmethod
     def prepare_fields(field_names):
