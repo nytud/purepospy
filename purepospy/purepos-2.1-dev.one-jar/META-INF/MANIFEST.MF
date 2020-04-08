@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+ImplementationVersion: 2.1-dev
+Main-Class: com.simontuffs.onejar.Boot
+
