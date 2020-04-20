@@ -1,4 +1,4 @@
 include purepospy/szeged.model
-include purepospy/purepos-2.1-dev.one-jar/lib/commons-lang3-3.0.1.jar
-include purepospy/purepos-2.1-dev.one-jar/lib/guava-r09.jar
-include purepospy/purepos-2.1-dev.one-jar/main/purepos-2.1-dev.jar
+include purepospy/purepos-2.1.one-jar/lib/commons-lang3-3.0.1.jar
+include purepospy/purepos-2.1.one-jar/lib/guava-r09.jar
+include purepospy/purepos-2.1.one-jar/main/purepos-2.1.jar

@@ -18,10 +18,10 @@ class UserMorphology:
 
 
 class PurePOS:
-    class_path = ':'.join((os.path.join(os.path.dirname(__file__), 'purepos-2.1-dev.one-jar/', jar)
+    class_path = ':'.join((os.path.join(os.path.dirname(__file__), 'purepos-2.1.one-jar/', jar)
                            for jar in ('lib/commons-lang3-3.0.1.jar',
                                        'lib/guava-r09.jar',
-                                       'main/purepos-2.1-dev.jar')))
+                                       'main/purepos-2.1.jar')))
     pass_header = True
 
     def __init__(self, model_name=os.path.join(os.path.dirname(__file__), 'szeged.model'), morphology=None,
@@ -107,7 +107,7 @@ class PurePOS:
     def tag_sentence(self, sent, beam_log_theta=math.log(1000), suffix_log_theta=math.log(10), max_guessed=10,
                      use_beam_search=False, lemma_transformation_type='suffix', lemma_threshold=2):
         if self._tagger is None:
-            print('Compiling model...', end='', file=sys.stderr)
+            # print('Compiling model...', end='', file=sys.stderr)
             # DUMMY STUFF NEEDED LATTER:
             # 1) Create nullanalyzer as we will use a Morphological Alalyzer form outside
             analyzer = self._autoclass('hu.ppke.itk.nlpg.purepos.morphology.NullAnalyzer')()
@@ -135,7 +135,7 @@ class PurePOS:
             # FIRE UP THE TAGGER WITH THE GIVEN ARGUMENTS:
             self._tagger = self._autoclass('hu.ppke.itk.nlpg.purepos.MorphTagger')(
                 compiled_model, analyzer, beam_log_theta, suffix_log_theta, max_guessed, use_beam_search)
-            print('Done', file=sys.stderr)
+            # print('Done', file=sys.stderr)
 
         # Here we add the Morphological Analyzer's analyses when there are...
         """

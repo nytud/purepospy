@@ -1,17 +1,18 @@
-# PurePosPy
+# PurePOSPy
 
-A Python3 wrapper for [PurePos](https://github.com/ppke-nlpg/purepos). (A previous version of the code is stored at https://github.com/ppke-nlpg/purepospy .)
+A Python3 wrapper for [PurePOS](https://github.com/ppke-nlpg/purepos). (A previous version of the code is stored at https://github.com/ppke-nlpg/purepospy .)
 
 ## Requirements
 
 - See requirements.txt.
 - Model (already included) e.g. [Szeged corpus](http://rgai.inf.u-szeged.hu/index.php?lang=en&page=SzegedTreebank) with [emMorph tags](http://e-magyar.hu/en/textmodules/emmorph_codelist).
+- Run `make download-purepos` to get PurePOS before first use or building the package.
 
 ## Usage
 
 The authors recommend using PurePOSPy in [emtsv](https://github.com/dlt-rilmta/emtsv) the new version of [e-magyar](http://www.e-magyar.hu) language processing system. This module is called *emTag*.
 
-The PurePOS class is a Python 3 wrapper class around PurePos, which can be used for training and tagging
+The PurePOS class is a Python 3 wrapper class around PurePOS, which can be used for training and tagging
 
 	```python
 	>>> from purepospy import PurePOS
@@ -27,4 +28,4 @@ The PurePOS class is a Python 3 wrapper class around PurePos, which can be used 
 ## License
 
 This Python wrapper, and utilities are licensed under the LGPL 3.0 license.
-PurePos has its own license.
+PurePOS has its own license.

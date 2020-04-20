@@ -2,7 +2,13 @@ DIR := ${CURDIR}
 all:
 	echo "See Makefile for possible targets!"
 
-dist/*.whl:
+purepospy/purepos-2.1.one-jar.jar:
+	wget https://github.com/ppke-nlpg/purepos/releases/download/v2.1/purepos-2.1.one-jar.jar -O purepospy/purepos-2.1.one-jar.jar
+	mkdir purepospy/purepos-2.1.one-jar; cd purepospy/purepos-2.1.one-jar; jar xvf ../purepos-2.1.one-jar.jar; cd ../..
+
+download-purepos: purepospy/purepos-2.1.one-jar.jar
+
+dist/*.whl: download-purepos
 	echo "Building package..."
 	python3 setup.py sdist bdist_wheel
 
@@ -27,5 +33,6 @@ install-user-test-uninstall: install-user-test
 
 clean:
 	rm -rf dist/ build/ purepospy.egg-info/
+	rm -rf purepospy/purepos-2.1.one-jar.jar purepospy/purepos-2.1.one-jar
 
 clean-build: clean build

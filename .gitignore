@@ -108,3 +108,7 @@ venv.bak/
 
 # Temp file from editor
 *~
+
+# PurePOS binary stuff
+*.jar
+*-jar/
