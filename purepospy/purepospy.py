@@ -19,8 +19,8 @@ class UserMorphology:
 
 class PurePOS:
     class_path = ':'.join((os.path.join(os.path.dirname(__file__), 'purepos-2.1-dev.one-jar/', jar)
-                           for jar in ('lib/guava-r09.jar',
-                                       'lib/commons-lang3-3.0.1.jar',
+                           for jar in ('lib/commons-lang3-3.0.1.jar',
+                                       'lib/guava-r09.jar',
                                        'main/purepos-2.1-dev.jar')))
     pass_header = True
 

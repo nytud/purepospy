@@ -1,4 +1,4 @@
-Cython
+cython
 # Cython MUST BE INSTALLED SEPARATELY, ELSE INSTALL WILL FAIL!
 pyjnius==1.2
 xtsv>=1.0,<2.0
