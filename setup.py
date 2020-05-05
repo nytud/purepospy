@@ -24,7 +24,7 @@ setuptools.setup(
         'Operating System :: POSIX :: Linux',
     ],
     python_requires='>=3.6',
-    install_requires=['pyjnius==1.2',  # TODO: List dependencies at only one file requirements.txt vs. setup.py
+    install_requires=['pyjnius>=1.3.0',  # TODO: List dependencies at only one file requirements.txt vs. setup.py
                       'xtsv>=1.0,<2.0',
                       ],
     include_package_data=True,
