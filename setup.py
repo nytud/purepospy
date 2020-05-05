@@ -17,7 +17,7 @@ setuptools.setup(
     url='https://github.com/dlt-rilmta/purepospy',
     # license='GNU Lesser General Public License v3 (LGPLv3)',  # Never really used in favour of classifiers
     # platforms='any',  # Never really used in favour of classifiers
-    packages=setuptools.find_packages(exclude=['test']),
+    packages=setuptools.find_packages(exclude=['tests']),
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',

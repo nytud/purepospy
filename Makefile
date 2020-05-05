@@ -26,7 +26,7 @@ test:
         cd ${CURDIR}
 
 install-user-test: install-user test
-	echo "The test was completed successfully!"
+	@echo "The test was completed successfully!"
 
 ci-test: install-user-test
 
