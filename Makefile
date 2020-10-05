@@ -46,9 +46,9 @@ clean-extra:
 
 # check:
 # 	# Check for file or command
-# 	@test -f ${DEP_FILE} >/dev/null 2>&1 || \
-# 		 { echo >&2 "File \`${DEP_FILE}\` could not be found!"; exit 1; }
-# 	@command -v ${DEP_COMMAND} >/dev/null 2>&1 || { echo >&2 "Command \`${DEP_COMMAND}\`could not be found!"; exit 1; }
+# 	@test -f $(DEP_FILE) >/dev/null 2>&1 || \
+# 		 { echo >&2 "File \`$(DEP_FILE)\` could not be found!"; exit 1; }
+# 	@command -v $(DEP_COMMAND) >/dev/null 2>&1 || { echo >&2 "Command \`$(DEP_COMMAND)\`could not be found!"; exit 1; }
 
 dist/*.whl dist/*.tar.gz: extra # check
 	@echo "Building package..."
@@ -62,8 +62,8 @@ install-user: build
 
 test:
 	@echo "Running tests..."
-	time (cd /tmp && python3 -m ${MODULE} ${MODULE_PARAMS} -i $(DIR)/tests/${TEST_INPUT} | \
-	diff -sy --suppress-common-lines - $(DIR)/tests/${TEST_OUTPUT} 2>&1 | head -n100)
+	time (cd /tmp && python3 -m $(MODULE) $(MODULE_PARAMS) -i $(DIR)/tests/$(TEST_INPUT) | \
+	diff -sy --suppress-common-lines - $(DIR)/tests/$(TEST_OUTPUT) 2>&1 | head -n100)
 
 install-user-test: install-user test
 	@echo "$(green)The test was completed successfully!$(sgr0)"
@@ -78,12 +78,12 @@ ci-test: install-user-test check-version
 
 uninstall:
 	@echo "Uninstalling..."
-	pip3 uninstall -y ${MODULE}
+	pip3 uninstall -y $(MODULE)
 
 install-user-test-uninstall: install-user-test uninstall
 
 clean: clean-extra
-	rm -rf dist/ build/ ${MODULE}.egg-info/
+	rm -rf dist/ build/ $(MODULE).egg-info/
 
 clean-build: clean build
 
@@ -120,5 +120,6 @@ __release:
 	@git add $(MODULE)/version.py
 	@git commit -m "Release $(NEWVER)"
 	@git tag -a "v$(NEWVER)" -m "Release $(NEWVER)"
+	@git push
 	@git push --tags
 .PHONY: __release
